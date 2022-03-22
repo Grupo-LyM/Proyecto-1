@@ -1,0 +1,374 @@
+/*
+Gramatica para el Robot:
+Autor: Alejandro Arango
+Modificado por: Silvia Takahashi
+Modificado por: Juan Pablo Morales.
+Agregadas producciones para manejar globos
+Modificado por Silvia Takahashi
+Eliminadas producciones para manejar globos
+Agregado el esqueleto para la traduccion
+Modificado por Silvia Takahashi 
+Re: Agregar Reglas para el manejo de globos
+Modificado por Saulo Daza y Sonia Vivas
+Modificado por Silvia Takahashi
+Eliminadas reglas de traducci�n DE  MARCROS
+Cambio del lenguaje de comandos
+Modificado por Silvia Takahashi: algunas Reglas para traduccion
+Modificado por Silvia Takahashi: Cambio en el lenguaje
+Abril: 2008 - Simplificado apra solo interpretaci�n
+ **/
+
+options 
+{
+	LOOKAHEAD=1; 
+	IGNORE_CASE=true;
+	STATIC = false;
+	
+}
+   
+
+PARSER_BEGIN(Robot)
+
+package uniandes.lym.robot.control;
+
+import uniandes.lym.robot.kernel.*;
+import java.awt.Point;
+import java.io.*;
+import java.util.Vector;
+import java.util.LinkedList;
+
+@SuppressWarnings("serial")
+public class Robot 
+{
+
+
+	private RobotWorldDec world;
+	
+	
+	void setWorld(RobotWorld w) {
+		world = (RobotWorldDec) w;	
+	}
+
+	String salida=new String();
+}
+PARSER_END(Robot)
+
+SKIP:
+{
+	" "
+	|	"\r"
+	|	"\t"
+//	| "\n"
+}
+
+TOKEN: /* Nombres de Comandos */
+{
+
+			<DEFVAR:  "defvar">
+		| 	<ASIGNAR: "=">
+		| 	<MOVE: "move">
+		| 	<TURN: "turn">
+		| 	<FACE: "face">
+		| 	<PUT: "put">
+		|   <PICK: "pick">
+		| 	<MOVE_DIR: "move-dir">
+		| 	<RUN_DIR: "run-dirs">
+		| 	<MOVE_FACE: "move-face">
+		| 	<SALTAR: "skip">
+		
+
+}
+TOKEN: /* Parentesis*/
+{
+
+			<parA: "(">
+		|	< parC: ")"> 
+
+}
+
+TOKEN: /*Cardinales*/
+{
+			<NORTE: ":north">
+		|	<SUR: ":south">
+		| 	<ESTE: ":east">
+		|   <OESTE: ":west">  
+}
+
+TOKEN:/*Direcciones*/
+{
+  			<LEFT: ":left">
+  		| 	<RIGHT: ":right">
+  		| 	<AROUND: ":around">
+  		| 	<FRONT: ":front">
+  		| 	<BACK: ":back">
+
+}
+
+TOKEN :
+{
+			<BALLOONS:  ":balloons" >
+		|	<CHIPS: ":chips"  >	
+
+}
+
+TOKEN :
+{
+			<FACING_P:  "facing-p">
+		|	<CAN_PUT_P: "can-put-p" >
+		| 	<CAN_PICK_P: "can-pick-p">
+		| 	<CAN_MOVE_P: "can-move-p">
+		| 	<NOT: "not"> 	
+
+}
+
+
+TOKEN :
+{
+		<NUMERO: (<DIGIT>)+ >
+		|  	<#DIGIT: ["0"-"9"] >
+		| 	< LETTER: ["a"-"z","A"-"Z"] >
+		| 	< VARIABLE:(((<DIGIT>)*<LETTER>))((<DIGIT>|<LETTER>)*) >
+}
+
+/*Definicion de comandos*/
+void defvariable():
+{}
+{
+  <parA>
+  <DEFVAR>
+  <VARIABLE>
+  <NUMERO>
+  <parC>
+}
+
+void asignar():
+{}
+{
+  <parA>
+  <ASIGNAR>
+  <VARIABLE>
+  <NUMERO>
+  <parC>
+}
+
+void mover():
+{}
+{
+  <parA>
+  <MOVE>
+  <NUMERO>
+  <parC>
+}
+
+void turn():
+{}
+{
+  <parA>
+  <TURN>
+  (		<LEFT>
+	| 	<RIGHT>
+	| 	<AROUND>  )
+  <parC>
+}
+
+void face():
+{}
+{
+  <parA>
+  <FACE>
+  (		<NORTE>
+	| 	<SUR>
+	| 	<ESTE>
+	| 	<OESTE>
+  )
+  <parC>
+}
+
+void put():
+{}
+{
+  <parA>
+  <PUT>
+  (		<BALLOONS>
+	|	<CHIPS>   )
+  <NUMERO>
+  <parC>
+}
+
+void pick():
+{}
+{
+  <parA>
+  <PICK>
+  (		<BALLOONS>
+	|	<CHIPS> 
+  )
+  <NUMERO>
+  <parC>
+}
+
+void move_dir():
+{}
+{
+  <parA>
+  <MOVE_DIR>
+  <NUMERO>
+  (		<FRONT>
+	|	<BACK>
+	| 	<RIGHT>
+	| 	<LEFT> 
+  )
+  <parC>
+}
+
+void run_dir():
+{}
+{
+  <parA>
+  <RUN_DIR>
+  <NUMERO>
+  (		<FRONT>
+	|	<BACK>
+	| 	<RIGHT>
+	| 	<LEFT> 
+  )+
+  <parC>
+}
+
+void move_face():
+{}
+{
+  <parA>
+  <MOVE_FACE>
+  (    	<NUMERO>
+  | 	<VARIABLE> /*OJO: Ver si se debe verificar que la variable ya existe. REVISAR*/
+  )
+  (		<NORTE>
+	|	<SUR>
+	| 	<ESTE>
+	| 	<OESTE> 
+  )
+  <parC>
+}
+
+void skip():
+{}
+{
+  <parA>
+  <SALTAR>
+  <parC>
+}
+
+/*Definicion de condicionales*/
+
+void facing_p():
+{}
+{
+  <parA>
+  <FACING_P>
+  (		<NORTE>
+	|	<SUR>
+	| 	<ESTE>
+	| 	<OESTE> 
+  )
+  <parC>
+}
+
+void can_put_p():
+{}
+{
+  <parA>
+  <CAN_PUT_P>
+  (		<BALLOONS>
+	|	<CHIPS> 
+  )
+  <NUMERO>
+
+  <parC>
+}
+
+void can_pick_p():
+{}
+{
+  <parA>
+  <CAN_PICK_P>
+  (		<BALLOONS>
+	|	<CHIPS> 
+  )
+  <NUMERO>
+
+  <parC>
+}
+
+void can_move_p():
+{}
+{
+  <parA>
+  <CAN_MOVE_P>
+  (		<NORTE>
+	|	<SUR>
+	| 	<ESTE>
+	| 	<OESTE> 
+  )
+
+  <parC>
+}
+
+void not_cond():
+{}
+{
+  <parA>
+  <NOT>
+  (		facing_p()
+	|	can_put_p()
+	| 	can_pick_p()
+	| 	can_move_p()
+	| 	not_cond()
+	| 	<VARIABLE> /* OJO, AQUI NO SE REVISA SI ES YA UNA FUNCION DEFINIDA. REVISAR*/
+  )
+
+  <parC>
+}
+
+
+//ESTAR PENDIENTE DE COMO EVALUAR
+boolean command(StringBuffer sistema) :
+{	
+	
+	int x;
+	salida=new String();
+	
+}
+	
+{
+	(
+	   defvariable()
+	|  asignar()
+	|  mover()				  			
+	|  turn()	
+    |  face()
+	) "\n" 
+
+	{
+	  //  try {
+    	//		 Thread.sleep(1);
+    	  //   } catch (InterruptedException e) {
+    		//	        System.err.format("IOException: %s%n", e);
+    		//	    }
+    			 
+		sistema.append(salida);
+		return true;
+	}
+
+ |  "\n" { return true; }
+
+	| <EOF> {return false;} 
+}
+
+
+
+
+
+
+
+
